@@ -60,6 +60,10 @@ public class Menu {
         displayed = false;
     }
 
+    public Price totalPrice() {
+        return menuProducts.totalPrice();
+    }
+
     public Price getPrice() {
         return price;
     }
@@ -67,4 +71,6 @@ public class Menu {
     public boolean isDisplayed() {
         return displayed;
     }
+
+
 }

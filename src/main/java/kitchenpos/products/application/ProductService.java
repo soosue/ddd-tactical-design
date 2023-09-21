@@ -1,5 +1,6 @@
 package kitchenpos.products.application;
 
+import kitchenpos.menus.application.MenuService;
 import kitchenpos.products.domain.PurgomalumClient;
 import kitchenpos.menus.domain.Menu;
 import kitchenpos.menus.domain.MenuProduct;
@@ -13,22 +14,24 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
 public class ProductService {
     private final ProductRepository productRepository;
     private final MenuRepository menuRepository;
+    private final MenuService menuService;
     private final PurgomalumClient purgomalumClient;
 
     public ProductService(
-        final ProductRepository productRepository,
-        final MenuRepository menuRepository,
-        final PurgomalumClient purgomalumClient
+            final ProductRepository productRepository,
+            final MenuRepository menuRepository,
+            final MenuService menuService,
+            final PurgomalumClient purgomalumClient
     ) {
         this.productRepository = productRepository;
         this.menuRepository = menuRepository;
+        this.menuService = menuService;
         this.purgomalumClient = purgomalumClient;
     }
 
@@ -42,20 +45,7 @@ public class ProductService {
         final Product product = productRepository.findById(productId)
             .orElseThrow(NoSuchElementException::new);
         product.changePrice(request.getPrice());
-        final List<Menu> menus = menuRepository.findAllByProductId(productId);
-        for (final Menu menu : menus) {
-            BigDecimal sum = BigDecimal.ZERO;
-            for (final MenuProduct menuProduct : menu.getMenuProducts()) {
-                sum = sum.add(
-                    menuProduct.getProduct()
-                        .getPrice()
-                        .multiply(BigDecimal.valueOf(menuProduct.getQuantity()))
-                );
-            }
-            if (menu.getPrice().compareTo(sum) > 0) {
-                menu.setDisplayed(false);
-            }
-        }
+        menuService.followMenuPricePolicy(productId);
         return product;
     }
 
